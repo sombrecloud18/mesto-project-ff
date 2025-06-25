@@ -2,6 +2,17 @@ import './styles/index.css';
 import initialCards from './cards.js';
 import { createCard } from './components/card.js';
 import { openModal, closeModal } from './components/modal.js';
+import { enableValidation, clearValidation } from './components/validation.js';
+
+
+const validationConfig = {
+  formSelector: '.popup__form',
+  inputSelector: '.popup__input',
+  submitButtonSelector: '.popup__button',
+  inactiveButtonClass: 'form__submit_inactive',
+  inputErrorClass: 'popup__input_type_error',
+  errorClass: 'form__input-error_active'
+};
 
 const container = document.querySelector('.places__list');
 const editButton = document.querySelector('.profile__edit-button');
@@ -22,61 +33,61 @@ const cardName = addCardForm.querySelector('.popup__input_type_card-name');
 const cardImage = addCardForm.querySelector('.popup__input_type_url');
 
 initialCards.forEach(cardData => {
-    container.append(createCard(cardData, openImagePopup));
+  container.append(createCard(cardData, openImagePopup));
 });
 
 function handleProfileFormSubmit(evt) {
-    evt.preventDefault();
-    profileName.textContent = nameInput.value;
-    profileJob.textContent = jobInput.value;
-    closeModal(editModal);
+  evt.preventDefault();
+  profileName.textContent = nameInput.value;
+  profileJob.textContent = jobInput.value;
+  closeModal(editModal);
 }
-
-editForm.addEventListener('submit', handleProfileFormSubmit);
-
-editButton.addEventListener('click', () => {
-    nameInput.value = profileName.textContent;
-    jobInput.value = profileJob.textContent;
-    openModal(editModal);
-});
 
 function handleCardFormSubmit(evt) {
-    evt.preventDefault();
-    
-    const newCardData = {
-        name: cardName.value,
-        link: cardImage.value
-    };
-    const newCard = createCard(newCardData, openImagePopup);
-    container.prepend(newCard);
-
-    closeModal(addModal);
-    addCardForm.reset();
+  evt.preventDefault();
+  
+  const newCardData = {
+    name: cardName.value,
+    link: cardImage.value
+  };
+  
+  const newCard = createCard(newCardData, openImagePopup);
+  container.prepend(newCard);
+  closeModal(addModal);
+  addCardForm.reset();
 }
 
-addCardForm.addEventListener('submit', handleCardFormSubmit);
+editButton.addEventListener('click', () => {
+  nameInput.value = profileName.textContent;
+  jobInput.value = profileJob.textContent;
+  clearValidation(editForm, validationConfig);
+  openModal(editModal);
+});
 
 addButton.addEventListener('click', () => {
-    openModal(addModal);
-});
-
-modals.forEach(modal => {
-    modal.classList.add('popup_is-animated');
-});
-
-
-modals.forEach((modal) => {
-    modal.addEventListener('click', (event) => {
-        if (event.target.classList.contains('popup__close') || event.target === modal) {
-            closeModal(modal);
-        }
-    });
+  addCardForm.reset();
+  clearValidation(addCardForm, validationConfig);
+  openModal(addModal);
 });
 
 function openImagePopup(cardData) {
-    popupImage.src = cardData.link;
-    popupImage.alt = cardData.name;
-    popupCaptionImage.textContent = cardData.name;
-        
-    openModal(modalImage);
+  popupImage.src = cardData.link;
+  popupImage.alt = cardData.name;
+  popupCaptionImage.textContent = cardData.name;
+  openModal(modalImage);
 } 
+
+modals.forEach(modal => {
+  modal.classList.add('popup_is-animated');
+  
+  modal.addEventListener('click', (event) => {
+    if (event.target.classList.contains('popup__close') || event.target === modal) {
+      closeModal(modal);
+    }
+  });
+});
+
+editForm.addEventListener('submit', handleProfileFormSubmit);
+addCardForm.addEventListener('submit', handleCardFormSubmit);
+
+enableValidation(validationConfig);

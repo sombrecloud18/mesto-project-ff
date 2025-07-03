@@ -43,9 +43,20 @@ const profilePhoto = document.querySelector('.profile__image');
 const popupProfileImage = document.querySelector('.popup_type_edit-image');
 const editImageForm = document.forms['edit-image'];
 const imageInput = editImageForm.querySelector('.popup__input_type_url');
+const profilePhotoContainer = document.querySelector('.profile__image-container');
 
 let currentUserId = '';
 let currentUserAvatar = '';
+
+function submitWithLoader(promise, submitButton) {
+  const originalText = submitButton.textContent;
+  submitButton.textContent = 'Сохранение...';
+  
+  return promise
+    .finally(() => {
+      submitButton.textContent = originalText;
+    });
+}
 
 function updateUserAvatar(avatarUrl) {
   profilePhoto.style.backgroundImage = `url('${avatarUrl}')`;
@@ -62,10 +73,10 @@ function openImagePopup(cardData) {
 function handleProfileFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
-  const originalText = submitButton.textContent;
-  submitButton.textContent = 'Сохранение...';
-  
-  updateUserInfo(nameInput.value, jobInput.value)
+  submitWithLoader(
+    updateUserInfo(nameInput.value, jobInput.value),
+    submitButton
+  )
     .then((userData) => {
       profileName.textContent = userData.name;
       profileJob.textContent = userData.about;
@@ -73,21 +84,18 @@ function handleProfileFormSubmit(evt) {
     })
     .catch((error) => {
       console.error('Ошибка при обновлении профиля:', error);
-    })
-    .finally(() => {
-      submitButton.textContent = originalText;
     });
 }
 
 function handleAvatarFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
-  const originalText = submitButton.textContent;
-  submitButton.textContent = 'Сохранение...';
-  
   const newAvatarUrl = imageInput.value;
   
-  updateAvatar(newAvatarUrl)
+  submitWithLoader(
+    updateAvatar(newAvatarUrl),
+    submitButton
+  )
     .then((userData) => {
       updateUserAvatar(userData.avatar);
       closeModal(popupProfileImage);
@@ -95,25 +103,23 @@ function handleAvatarFormSubmit(evt) {
     })
     .catch((error) => {
       console.error('Ошибка при обновлении аватара:', error);
-    })
-    .finally(() => {
-      submitButton.textContent = originalText;
     });
 }
 
 function handleCardFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
-  const originalText = submitButton.textContent;
-  submitButton.textContent = 'Сохранение...';
   
-  addNewCard(cardName.value, cardImage.value)
+  submitWithLoader(
+    addNewCard(cardName.value, cardImage.value),
+    submitButton
+  )
     .then((newCard) => {
       const cardElement = createCard(
         newCard, 
-        openImagePopup, 
-        handleDeleteCard,
-        handleLikeClick,
+        openImagePopup,
+        (cardId, cardElement) => handleDeleteCard(cardId, cardElement),
+        (cardId, likeButton, likeCounter) => handleLikeClick(cardId, likeButton, likeCounter),
         currentUserId
       );
       
@@ -123,9 +129,6 @@ function handleCardFormSubmit(evt) {
     })
     .catch((error) => {
       console.error('Ошибка при добавлении карточки:', error);
-    })
-    .finally(() => {
-      submitButton.textContent = originalText;
     });
 }
 
@@ -139,7 +142,9 @@ function handleDeleteCard(cardId, cardElement) {
     });
 }
 
-function handleLikeClick(cardId, isLiked, likeCounter) {
+function handleLikeClick(cardId, likeButton, likeCounter) {
+  const isLiked = likeButton.classList.contains('card__like-button_is-active');
+  
   const likePromise = isLiked 
     ? unlikeCard(cardId) 
     : likeCard(cardId);
@@ -147,13 +152,14 @@ function handleLikeClick(cardId, isLiked, likeCounter) {
   likePromise
     .then((updatedCard) => {
       likeCounter.textContent = updatedCard.likes.length;
+      likeButton.classList.toggle('card__like-button_is-active');
     })
     .catch((error) => {
       console.error('Ошибка при обновлении лайка:', error);
     });
 }
 
-profilePhoto.addEventListener('click', () => {
+profilePhotoContainer.addEventListener('click', () => {
   imageInput.value = currentUserAvatar;
   clearValidation(editImageForm, validationConfig);
   openModal(popupProfileImage);
@@ -209,11 +215,11 @@ function loadCards() {
       cards.forEach(cardData => {
         const cardElement = createCard(
           cardData, 
-          openImagePopup, 
-          handleDeleteCard,
-          handleLikeClick,
+          openImagePopup,
+          (cardId, cardElement) => handleDeleteCard(cardId, cardElement),
+          (cardId, likeButton, likeCounter) => handleLikeClick(cardId, likeButton, likeCounter),
           currentUserId
-        );
+      );
         container.append(cardElement);
       });
     })

@@ -1,9 +1,17 @@
 import './styles/index.css';
-import initialCards from './cards.js';
 import { createCard } from './components/card.js';
 import { openModal, closeModal } from './components/modal.js';
 import { enableValidation, clearValidation } from './components/validation.js';
-
+import {
+  getUserInfo,
+  getInitialCards,
+  updateUserInfo,
+  addNewCard,
+  updateAvatar,
+  likeCard,
+  unlikeCard,
+  deleteCard
+} from './components/api.js';
 
 const validationConfig = {
   formSelector: '.popup__form',
@@ -28,41 +36,65 @@ const nameInput = editForm.querySelector('.popup__input_type_name');
 const jobInput = editForm.querySelector('.popup__input_type_description');
 const profileName = document.querySelector('.profile__title');
 const profileJob = document.querySelector('.profile__description');
-const profilePhoto = document.querySelector('.profile__image');
 const addCardForm = document.forms['new-place'];
 const cardName = addCardForm.querySelector('.popup__input_type_card-name');
 const cardImage = addCardForm.querySelector('.popup__input_type_url');
+const profilePhoto = document.querySelector('.profile__image');
+const popupProfileImage = document.querySelector('.popup_type_edit-image');
+const editImageForm = document.forms['edit-image'];
+const imageInput = editImageForm.querySelector('.popup__input_type_url');
 
-initialCards.forEach(cardData => {
-  container.append(createCard(cardData, openImagePopup));
-});
+let currentUserId = '';
+let currentUserAvatar = '';
+
+function updateUserAvatar(avatarUrl) {
+  profilePhoto.style.backgroundImage = `url('${avatarUrl}')`;
+  currentUserAvatar = avatarUrl;
+}
+
+function openImagePopup(cardData) {
+  popupImage.src = cardData.link;
+  popupImage.alt = cardData.name;
+  popupCaptionImage.textContent = cardData.name;
+  openModal(modalImage);
+}
 
 function handleProfileFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
   const originalText = submitButton.textContent;
   submitButton.textContent = 'Сохранение...';
-  fetch('https://nomoreparties.co/v1/wff-cohort-41/users/me', {
-    method: 'PATCH',
-    headers: {
-      authorization: 'ed2813cd-3e45-42f1-86f8-753c32ce7697',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: nameInput.value,
-      about: jobInput.value
-    })
-  })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error('Ошибка при обновлении профиля');
-      }
-      return res.json();
-    })
-    .then((result) => {
-      profileName.textContent = result.name;
-      profileJob.textContent = result.about;
+  
+  updateUserInfo(nameInput.value, jobInput.value)
+    .then((userData) => {
+      profileName.textContent = userData.name;
+      profileJob.textContent = userData.about;
       closeModal(editModal);
+    })
+    .catch((error) => {
+      console.error('Ошибка при обновлении профиля:', error);
+    })
+    .finally(() => {
+      submitButton.textContent = originalText;
+    });
+}
+
+function handleAvatarFormSubmit(evt) {
+  evt.preventDefault();
+  const submitButton = evt.submitter;
+  const originalText = submitButton.textContent;
+  submitButton.textContent = 'Сохранение...';
+  
+  const newAvatarUrl = imageInput.value;
+  
+  updateAvatar(newAvatarUrl)
+    .then((userData) => {
+      updateUserAvatar(userData.avatar);
+      closeModal(popupProfileImage);
+      editImageForm.reset();
+    })
+    .catch((error) => {
+      console.error('Ошибка при обновлении аватара:', error);
     })
     .finally(() => {
       submitButton.textContent = originalText;
@@ -74,45 +106,58 @@ function handleCardFormSubmit(evt) {
   const submitButton = evt.submitter;
   const originalText = submitButton.textContent;
   submitButton.textContent = 'Сохранение...';
-  fetch('https://nomoreparties.co/v1/wff-cohort-41/cards', {
-    method: 'POST',
-    headers: {
-      authorization: 'ed2813cd-3e45-42f1-86f8-753c32ce7697',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: cardName.value,
-      link: cardImage.value
-    })
-  })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error('Ошибка при добавлении карточки');
-      }
-      return res.json();
-    })
+  
+  addNewCard(cardName.value, cardImage.value)
     .then((newCard) => {
-        const cardElement = createCard(newCard, openImagePopup);
-        container.prepend(cardElement);
-        cardName.textContent = newCard.name;
-        cardImage.textContent = newCard.link;
-        closeModal(addModal);
+      const cardElement = createCard(
+        newCard, 
+        openImagePopup, 
+        handleDeleteCard,
+        handleLikeClick,
+        currentUserId
+      );
+      
+      container.prepend(cardElement);
+      closeModal(addModal);
+      addCardForm.reset();
+    })
+    .catch((error) => {
+      console.error('Ошибка при добавлении карточки:', error);
     })
     .finally(() => {
       submitButton.textContent = originalText;
     });
-
-
-  const newCardData = {
-    name: cardName.value,
-    link: cardImage.value
-  };
-  
-  const newCard = createCard(newCardData, openImagePopup);
-  container.prepend(newCard);
-  closeModal(addModal);
-  addCardForm.reset();
 }
+
+function handleDeleteCard(cardId, cardElement) {
+  deleteCard(cardId)
+    .then(() => {
+      cardElement.remove();
+    })
+    .catch((error) => {
+      console.error('Ошибка при удалении карточки:', error);
+    });
+}
+
+function handleLikeClick(cardId, isLiked, likeCounter) {
+  const likePromise = isLiked 
+    ? unlikeCard(cardId) 
+    : likeCard(cardId);
+  
+  likePromise
+    .then((updatedCard) => {
+      likeCounter.textContent = updatedCard.likes.length;
+    })
+    .catch((error) => {
+      console.error('Ошибка при обновлении лайка:', error);
+    });
+}
+
+profilePhoto.addEventListener('click', () => {
+  imageInput.value = currentUserAvatar;
+  clearValidation(editImageForm, validationConfig);
+  openModal(popupProfileImage);
+});
 
 editButton.addEventListener('click', () => {
   nameInput.value = profileName.textContent;
@@ -127,13 +172,6 @@ addButton.addEventListener('click', () => {
   openModal(addModal);
 });
 
-function openImagePopup(cardData) {
-  popupImage.src = cardData.link;
-  popupImage.alt = cardData.name;
-  popupCaptionImage.textContent = cardData.name;
-  openModal(modalImage);
-} 
-
 modals.forEach(modal => {
   modal.classList.add('popup_is-animated');
   
@@ -146,58 +184,45 @@ modals.forEach(modal => {
 
 editForm.addEventListener('submit', handleProfileFormSubmit);
 addCardForm.addEventListener('submit', handleCardFormSubmit);
+editImageForm.addEventListener('submit', handleAvatarFormSubmit);
 
 enableValidation(validationConfig);
 
-
-function loadUserInfo () {
-fetch('https://nomoreparties.co/v1/wff-cohort-41/users/me', {
-  headers: {
-    authorization: 'ed2813cd-3e45-42f1-86f8-753c32ce7697'
-  }
-})
-  .then(res => res.json())
-  .then((result) => {
-    console.log(result);
-    profileName.textContent = result.name;
-    profileJob.textContent = result.about;
-    profilePhoto.value = result.avatar;
-  });
+function loadUserInfo() {
+  return getUserInfo()
+    .then(userData => {
+      profileName.textContent = userData.name;
+      profileJob.textContent = userData.about;
+      updateUserAvatar(userData.avatar);
+      currentUserId = userData._id;
+      return userData;
+    })
+    .catch(error => {
+      console.error('Ошибка загрузки данных пользователя:', error);
+    });
 }
-
-loadUserInfo();
 
 function loadCards() {
-    return Promise.all([
-    fetch('https://nomoreparties.co/v1/wff-cohort-41/cards', {
-      headers: {
-        authorization: 'ed2813cd-3e45-42f1-86f8-753c32ce7697'
-      }
-    }),
-    fetch('https://nomoreparties.co/v1/wff-cohort-41/users/me', {
-      headers: {
-        authorization: 'ed2813cd-3e45-42f1-86f8-753c32ce7697'
-      }
+  return getInitialCards()
+    .then(cards => {
+      container.innerHTML = '';
+      cards.forEach(cardData => {
+        const cardElement = createCard(
+          cardData, 
+          openImagePopup, 
+          handleDeleteCard,
+          handleLikeClick,
+          currentUserId
+        );
+        container.append(cardElement);
+      });
     })
-  ])
-    .then(([cardsRes, userRes]) => {
-        if (!cardsRes.ok || !userRes.ok) {
-        throw new Error('Один из запросов завершился ошибкой');
-    }
-        return Promise.all([cardsRes.json(), userRes.json()]);
-    })
-    .then(([cards, userData]) => {
-    console.log('Карточки:', cards);
-    console.log('Данные пользователя:', userData);
-     container.innerHTML = '';
-    
-    cards.forEach(cardData => {
-      container.append(createCard(cardData, openImagePopup));
+    .catch(error => {
+      console.error('Ошибка загрузки карточек:', error);
     });
-    
-    return { cards, userData };
-    })
 }
 
-loadCards();
-
+Promise.all([loadUserInfo(), loadCards()])
+  .catch(error => {
+    console.error('Ошибка при инициализации приложения:', error);
+  });

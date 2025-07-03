@@ -26,3 +26,9 @@
   font-size: 13px;
   font-weight: 400;
 }
+
+.card__likes {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}

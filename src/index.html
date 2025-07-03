@@ -14,7 +14,14 @@
   </header>
   <main class="content">
     <section class="profile page__section">
-      <div class="profile__image" style="background-image:  url('<%=require('./images/avatar.jpg')%>')"></div>
+      <div class="profile__image-container">
+        <div class="profile__image" style="background-image: url('<%=require('./images/avatar.jpg')%>')"></div>
+        <div class="profile__image-edit">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M26 3.45351L6.76981 22.7932L3.33585 19.2903L22.517 0L26 3.45351ZM0 26L5.10189 24.4706L1.52075 21.0171L0 26Z" fill="white"/>
+        </svg>
+      </div>
+</div>
       <div class="profile__info">
         <h1 class="profile__title">Жак-Ив Кусто</h1>
         <button class="profile__edit-button" type="button"></button>
@@ -36,7 +43,7 @@
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Редактировать профиль</h3>
-<form class="popup__form" name="edit-profile" novalidate>
+      <form class="popup__form" name="edit-profile" novalidate>
         <input id="name-input" 
                type="text" 
                name="name" 
@@ -87,6 +94,22 @@
       </form>
     </div>
   </div>
+  <div class="popup popup_type_edit-image">
+    <div class="popup__content">
+      <button type="button" class="popup__close"></button>
+      <h3 class="popup__title">Обновить аватарку</h3>
+      <form class="popup__form" name="edit-image" novalidate>
+        <input id="image-url-input" 
+               type="url" 
+               name="link" 
+               class="popup__input popup__input_type_url" 
+               placeholder="Ссылка на картинку" 
+               required>
+        <span class="image-url-input-error form__input-error"></span>
+        <button type="submit" class="button popup__button" disabled>Сохранить</button>
+      </form>
+    </div>
+  </div>
   <div class="popup popup_type_image">
     <div class="popup__content popup__content_content_image">
       <button type="button" class="popup__close"></button>
@@ -103,8 +126,10 @@
     <div class="card__description">
       <h2 class="card__title">
       </h2>
+      <div class="card__likes">
       <button type="button" class="card__like-button"></button>
       <span class="card__like-amount"></span>
+      </div>
     </div>
   </li>
 </template>

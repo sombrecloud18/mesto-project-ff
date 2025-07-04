@@ -52,6 +52,7 @@
                minlength="2" 
                maxlength="40" 
                pattern="^[a-zA-Zа-яА-ЯёЁ\-\s]+$" 
+               data-error-message="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
                required>
         <span class="name-input-error form__input-error"></span>
         <input id="description-input" 
@@ -62,6 +63,7 @@
                minlength="2" 
                maxlength="400" 
                pattern="^[a-zA-Zа-яА-ЯёЁ\-\s]+$" 
+               data-error-message="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
                required>
         <span class="description-input-error form__input-error"></span>
         <button type="submit" class="button popup__button" disabled>Сохранить</button>
@@ -81,6 +83,7 @@
                minlength="2" 
                maxlength="30" 
                pattern="^[a-zA-Zа-яА-ЯёЁ\-\s]+$" 
+               data-error-message="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
                required>
         <span class="card-name-input-error form__input-error"></span>
         <input id="card-url-input" 

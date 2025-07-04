@@ -53,11 +53,15 @@ function submitWithLoader(promise, submitButton) {
   submitButton.textContent = 'Сохранение...';
   
   return promise
-    .finally(() => {
+    .then(result => {
       submitButton.textContent = originalText;
+      return result; 
+    })
+    .catch(error => {
+      submitButton.textContent = originalText;
+      throw error; 
     });
 }
-
 function updateUserAvatar(avatarUrl) {
   profilePhoto.style.backgroundImage = `url('${avatarUrl}')`;
   currentUserAvatar = avatarUrl;

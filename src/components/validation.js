@@ -13,15 +13,17 @@ export const hideInputError = (formElement, inputElement, config) => {
 };
 
 export const isValid = (formElement, inputElement, config) => {
-  let errorMessage = inputElement.validationMessage;
-  
-  if (!inputElement.validity.valid) {
-    if (inputElement.validity.patternMismatch) {
-      errorMessage = "Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы";
-    }
-    showInputError(formElement, inputElement, errorMessage, config);
+  if (inputElement.validity.patternMismatch) {
+    inputElement.setCustomValidity(inputElement.dataset.errorMessage);
   } else {
     inputElement.setCustomValidity('');
+  }
+  
+  const errorMessage = inputElement.validationMessage;
+
+  if (!inputElement.validity.valid) {
+    showInputError(formElement, inputElement, errorMessage, config);
+  } else {
     hideInputError(formElement, inputElement, config);
   }
 };

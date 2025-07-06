@@ -48,20 +48,7 @@ const profilePhotoContainer = document.querySelector('.profile__image-container'
 let currentUserId = '';
 let currentUserAvatar = '';
 
-function submitWithLoader(promise, submitButton) {
-  const originalText = submitButton.textContent;
-  submitButton.textContent = 'Сохранение...';
-  
-  return promise
-    .then(result => {
-      submitButton.textContent = originalText;
-      return result; 
-    })
-    .catch(error => {
-      submitButton.textContent = originalText;
-      throw error; 
-    });
-}
+
 function updateUserAvatar(avatarUrl) {
   profilePhoto.style.backgroundImage = `url('${avatarUrl}')`;
   currentUserAvatar = avatarUrl;
@@ -74,13 +61,18 @@ function openImagePopup(cardData) {
   openModal(modalImage);
 }
 
+function setButtonText(button, text) {
+  button.textContent = text;
+}
+
 function handleProfileFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
-  submitWithLoader(
-    updateUserInfo(nameInput.value, jobInput.value),
-    submitButton
-  )
+  const originalText = submitButton.textContent;
+  
+  setButtonText(submitButton, 'Сохранение...');
+  
+  updateUserInfo(nameInput.value, jobInput.value)
     .then((userData) => {
       profileName.textContent = userData.name;
       profileJob.textContent = userData.about;
@@ -88,18 +80,21 @@ function handleProfileFormSubmit(evt) {
     })
     .catch((error) => {
       console.error('Ошибка при обновлении профиля:', error);
+    })
+    .finally(() => {
+      setButtonText(submitButton, originalText);
     });
 }
 
 function handleAvatarFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
+  const originalText = submitButton.textContent;
   const newAvatarUrl = imageInput.value;
   
-  submitWithLoader(
-    updateAvatar(newAvatarUrl),
-    submitButton
-  )
+  setButtonText(submitButton, 'Сохранение...');
+  
+  updateAvatar(newAvatarUrl)
     .then((userData) => {
       updateUserAvatar(userData.avatar);
       closeModal(popupProfileImage);
@@ -107,17 +102,20 @@ function handleAvatarFormSubmit(evt) {
     })
     .catch((error) => {
       console.error('Ошибка при обновлении аватара:', error);
+    })
+    .finally(() => {
+      setButtonText(submitButton, originalText);
     });
 }
 
 function handleCardFormSubmit(evt) {
   evt.preventDefault();
   const submitButton = evt.submitter;
+  const originalText = submitButton.textContent;
   
-  submitWithLoader(
-    addNewCard(cardName.value, cardImage.value),
-    submitButton
-  )
+  setButtonText(submitButton, 'Сохранение...');
+  
+  addNewCard(cardName.value, cardImage.value)
     .then((newCard) => {
       const cardElement = createCard(
         newCard, 
@@ -133,6 +131,9 @@ function handleCardFormSubmit(evt) {
     })
     .catch((error) => {
       console.error('Ошибка при добавлении карточки:', error);
+    })
+    .finally(() => {
+      setButtonText(submitButton, originalText);
     });
 }
 
